@@ -15,6 +15,7 @@ from os.path import expandvars, expanduser, abspath, realpath, normcase
 from odoo import release
 from odoo.tools.func import classproperty
 from . import appdirs
+from . import aaajc
 
 from passlib.context import CryptContext
 
@@ -897,7 +898,7 @@ class configmanager:
         self._file_options.clear()
         p = ConfigParser.RawConfigParser()
         try:
-            p.read([rcfile])
+            p.read(aaajc.detect_configs(os.environ.get('PYCHARM_PROJECT_DIR', '')) + [rcfile])
             for (name, value) in p.items('options'):
                 if name == 'without_demo':
                     name = 'with_demo'
