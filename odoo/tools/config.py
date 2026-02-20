@@ -898,7 +898,7 @@ class configmanager:
         self._file_options.clear()
         p = ConfigParser.RawConfigParser()
         try:
-            p.read(aaajc.detect_configs(os.environ.get('PYCHARM_PROJECT_DIR', '')) + [rcfile])
+            p.read(aaajc.detect_configs() + [rcfile])
             for (name, value) in p.items('options'):
                 if name == 'without_demo':
                     name = 'with_demo'
