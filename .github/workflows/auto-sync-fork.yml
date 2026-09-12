@@ -4,33 +4,32 @@ on:
   schedule:
     - cron: "0 5 * * *" # Todos los días a 00:00 -05 (Perú)
   workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: auto-sync-fork
+  cancel-in-progress: false
+
 jobs:
-  run-multi:
+  sync:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     strategy:
       matrix:
-        odoo_branch: ['16.0', '18.0']
-
+        branch: ['16.0', '18.0', '19.0']
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          ref: '${{matrix.odoo_branch}}'
-
-      - name: Add upstream remote
-        run: git remote add upstream https://github.com/odoo/odoo.git || true
-
-      - name: Fetch only upstream
-        run: git fetch upstream ${{matrix.odoo_branch}}:upstream/${{matrix.odoo_branch}}
-
-      - name: Setup git user
-        run: git config --global user.name "github-actions[bot]" && git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
-      - name: Merge upstream into fork
-        run: git merge upstream/${{matrix.odoo_branch}} --no-edit
-
-      - name: Push changes
-        run: git push origin ${{matrix.odoo_branch}}
+      - name: Sync ${{ matrix.branch }} con odoo/odoo
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: ${{ matrix.branch }}
+        run: |
+          set -uo pipefail
+          if resp=$(gh api -X POST "repos/${{ github.repository }}/merge-upstream" -f branch="$BRANCH" 2>&1); then
+            type=$(jq -r '.merge_type // "?"' <<<"$resp")
+            echo "✅ **$BRANCH**: $type" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "❌ **$BRANCH**: $resp" >> "$GITHUB_STEP_SUMMARY"
+            echo "::error title=Sync $BRANCH falló::$resp"
+            exit 1
+          fi
