@@ -26,6 +26,7 @@ export class PosData {
         this.custom = {};
         this.syncInProgress = false;
         this.mutex = markRaw(new Mutex());
+        this.indexedDBMutex = markRaw(new Mutex());
         this.records = {};
         this.opts = new DataServiceOptions();
         this.channels = [];
@@ -41,9 +42,11 @@ export class PosData {
             unsyncData: [],
         });
 
-        if (!navigator.onLine) {
-            await this.checkConnectivity();
-        }
+        // UUIDs of paid orders written to IndexedDB but not yet confirmed synced to the server.
+        // Used by the beforeunload guard to prevent data loss on accidental page close/reload.
+        this.localUnsyncedPaidOrderUuids = new Set();
+
+        await this.checkConnectivity();
 
         this.initializeWebsocket();
         await this.initializeDeviceIdentifier();
@@ -147,45 +150,127 @@ export class PosData {
         });
 
         return new Promise((resolve) => {
-            this.indexedDB = new IndexedDB(this.databaseName, false, models, resolve);
+            this.indexedDB = new IndexedDB(this.databaseName, false, models, resolve, this.dialog);
         });
     }
 
     async synchronizeLocalDataInIndexedDB() {
+        return this.indexedDBMutex.exec(async () => await this._synchronizeLocalDataInIndexedDB());
+    }
+
+    /**
+     * Private method that synchronizes local data and state in indexedDB.
+     * DO NOT CALL THIS METHOD DIRECTLY, use synchronizeLocalDataInIndexedDB instead.
+     */
+    async _synchronizeLocalDataInIndexedDB() {
         // This methods will synchronize local data and state in indexedDB. This methods is mostly
         // used with models like pos.order, pos.order.line, pos.payment etc. These models are created
         // in the frontend and are not loaded from the backend.
         const modelsParams = Object.entries(this.opts.databaseTable);
         const data = {};
+        const dataToKeep = {};
+        let orderlinesToKeep = [];
+
         for (const [model, params] of modelsParams) {
-            const put = [];
-            const remove = [];
-            const modelData = this.models[model].getAll();
+            if (!params.getRecordsBasedOnLines) {
+                const data = this.models[model].getAll();
+                const recordsToPut = data.filter((record) => !params.condition(record));
 
-            for (const record of modelData) {
-                const isToRemove = params.condition(record);
+                if (model === "pos.order.line") {
+                    orderlinesToKeep = recordsToPut;
+                }
 
-                if (isToRemove === undefined || isToRemove === true) {
-                    if (record[params.key]) {
-                        remove.push(record[params.key]);
-                    }
-                } else {
-                    put.push(record.serializeForIndexedDB());
+                data[model] = recordsToPut;
+
+                if (recordsToPut.length) {
+                    await this.indexedDB.create(
+                        model,
+                        recordsToPut.map((r) => r.serializeForIndexedDB())
+                    );
+                    dataToKeep[model] = recordsToPut.map((r) => r[params.key]);
                 }
             }
+        }
 
-            await this.indexedDB.delete(model, remove);
-            await this.indexedDB.create(model, put);
-            data[model] = put;
+        for (const [model, params] of modelsParams) {
+            if (params.getRecordsBasedOnLines) {
+                const recordsToPut = params.getRecordsBasedOnLines(orderlinesToKeep);
 
-            if (remove.length) {
-                await this.indexedDB.delete(model, remove);
-            }
+                if (recordsToPut?.length) {
+                    const uniqueRecords = [
+                        ...new Map(recordsToPut.map((r) => [r[params.key], r])).values(),
+                    ];
 
-            if (put.length) {
-                await this.indexedDB.create(model, put);
+                    data[model] = uniqueRecords;
+
+                    await this.indexedDB.create(
+                        model,
+                        uniqueRecords.map((r) => r.serializeForIndexedDB())
+                    );
+                    dataToKeep[model] = uniqueRecords.map((r) => r[params.key]);
+                }
             }
         }
+
+        this.indexedDB.readAll(Object.keys(this.opts.databaseTable)).then((data) => {
+            if (!data) {
+                return;
+            }
+
+            for (const [model, records] of Object.entries(data)) {
+                const key = this.opts.databaseTable[model].key;
+                const keysToDelete = [];
+
+                for (const record of records) {
+                    const localRecord = this.models[model].get(record.id);
+                    if (!localRecord) {
+                        keysToDelete.push(record[key]);
+                        continue;
+                    }
+                    if (!dataToKeep[model] || !dataToKeep[model].includes(record[key])) {
+                        keysToDelete.push(record[key]);
+                    }
+                }
+
+                if (model === "pos.order") {
+                    const idbOrdersByUuid = new Map(records.map((r) => [r[key], r]));
+                    for (const trackedUuid of [...this.localUnsyncedPaidOrderUuids]) {
+                        const idbRecord = idbOrdersByUuid.get(trackedUuid);
+                        if (!idbRecord) {
+                            logPosMessage(
+                                "IndexedDB",
+                                "localUnsyncedPaidOrderUuids",
+                                `Paid order ${trackedUuid} is flagged but not found in IndexedDB — potential data loss`,
+                                CONSOLE_COLOR,
+                                [],
+                                true
+                            );
+                            continue;
+                        }
+                        const localRecord = this.models[model].get(idbRecord.id);
+                        if (idbRecord.state === "paid" || !localRecord?.isUnsyncedPaid) {
+                            // Remove guard when either:
+                            // - the order is confirmed in IndexedDB in paid state (safe on reload), or
+                            // - the order is no longer unsynced in memory (synced to server).
+                            this.localUnsyncedPaidOrderUuids.delete(trackedUuid);
+                        } else {
+                            logPosMessage(
+                                "IndexedDB",
+                                "localUnsyncedPaidOrderUuids",
+                                `Paid order ${trackedUuid} is in IndexedDB but has state "${idbRecord.state}" instead of "paid"`,
+                                CONSOLE_COLOR,
+                                [],
+                                true
+                            );
+                        }
+                    }
+                }
+
+                if (keysToDelete.length) {
+                    this.indexedDB.delete(model, keysToDelete);
+                }
+            }
+        });
 
         return data;
     }
@@ -229,6 +314,14 @@ export class PosData {
 
         const preLoadData = await this.preLoadData(data);
         const missing = await this.missingRecursive(preLoadData);
+
+        const serverProductIds = this.models["product.product"].map((p) => p.id);
+        const databaseProductIds = missing["product.product"]?.map((p) => p.id) ?? [];
+        const loadedProductIds = new Set([...databaseProductIds, ...serverProductIds]);
+        missing["pos.order.line"] = missing["pos.order.line"]?.filter((line) =>
+            loadedProductIds.has(line.product_id)
+        );
+
         const results = this.models.loadConnectedData(missing, []);
 
         await this.checkAndDeleteMissingOrders(results);
@@ -333,18 +426,6 @@ export class PosData {
 
         this.models.loadConnectedData(data, this.modelToLoad);
         this.models.loadConnectedData({ "pos.order": order, "pos.order.line": orderlines }, []);
-        this.sanitizeData();
-    }
-
-    async sanitizeData() {
-        const order_to_delete = this.models["pos.order"].filter((order) =>
-            order.lines.some((line) => line.is_reward_line && !line.coupon_id && !line.reward_id)
-        );
-        for (const order of order_to_delete) {
-            for (let i = order.lines.length - 1; i >= 0; i--) {
-                order.lines[i].delete();
-            }
-        }
     }
 
     async loadFieldsAndRelations() {

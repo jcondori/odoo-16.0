@@ -236,7 +236,6 @@ export class PosOrderline extends PosOrderlineAccounting {
             quantity = -Math.abs(quantity);
         }
 
-        this.order_id.assertEditable();
         const quant =
             typeof quantity === "number" ? quantity : parseFloat("" + (quantity ? quantity : 0));
 
@@ -314,14 +313,10 @@ export class PosOrderline extends PosOrderlineAccounting {
         if (this.qty < 0) {
             valid_lots_quantity = -valid_lots_quantity;
         }
-        this.setQuantity(valid_lots_quantity);
+        this.setQuantity(valid_lots_quantity, !!this.combo_parent_id);
     }
 
     hasValidProductLot() {
-        if (this.pack_lot_ids.length > 0) {
-            return true;
-        }
-
         const valid_product_lot = this.getValidLots();
         const lotsRequired = this.product_id.tracking == "serial" ? Math.abs(this.qty) : 1;
         return lotsRequired === valid_product_lot.length;
@@ -432,6 +427,11 @@ export class PosOrderline extends PosOrderlineAccounting {
         return tipProduct && this.product_id.id === tipProduct.id;
     }
 
+    isGlobalDiscountLine() {
+        const discountProduct = this.config.discount_product_id;
+        return discountProduct && this.product_id.id === discountProduct.id;
+    }
+
     getAllLinesInCombo() {
         if (this.combo_parent_id) {
             // having a `combo_parent_id` means that we are not
@@ -522,7 +522,7 @@ export class PosOrderline extends PosOrderlineAccounting {
     get refundedQty() {
         return (
             this.refund_orderline_ids?.reduce(
-                (acc, line) => (line.order_id.state !== "cancel" ? acc - line.qty : acc),
+                (acc, line) => (line.order_id?.state !== "cancel" ? acc - line.qty : acc),
                 0
             ) || 0
         );

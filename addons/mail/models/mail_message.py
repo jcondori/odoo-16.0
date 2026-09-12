@@ -978,6 +978,7 @@ class MailMessage(models.Model):
                 accessible_tracking_value_ids = tracking_values._filter_has_field_access(self.env)
                 message_domain |= Domain("id", "in", accessible_tracking_value_ids.mail_message_id.ids)
             domain &= message_domain
+        if search_term or is_notification is not None:
             res["count"] = self.search_count(domain)
         if around is not None:
             messages_before = self.search(domain & Domain('id', '<=', around), limit=limit // 2, order="id DESC")
@@ -1106,7 +1107,7 @@ class MailMessage(models.Model):
             # sudo: mail.message: access to author_id is allowed
             Store.One(
                 "author_id",
-                ["avatar_128", "is_company", Store.One("main_user_id", "share")],
+                ["avatar_128", "is_company", Store.One("main_user_id", ["partner_id", "share"])],
                 dynamic_fields=lambda m: m._get_store_partner_name_fields(),
                 sudo=True,
             ),
@@ -1208,6 +1209,7 @@ class MailMessage(models.Model):
         record_fields = [
             # sudo: mail.thread - if mentionned in a non accessible thread, name is allowed
             Store.Attr("display_name", sudo=True),
+            Store.Attr("has_mail_thread", lambda record: isinstance(record, self.env.registry["mail.thread"])),
             Store.Attr(
                 "module_icon",
                 lambda record: modules.module.get_module_icon(self.env[record._name]._original_module),

@@ -141,8 +141,7 @@ def _patch_request_ciusro_xml_to_pdf(company, xml_data):
     return {'content': 'JVBERi0xLjEKMSAwIG9iaiA8PC9UeXBlL0NhdGFsb2cvUGFnZXMgMiAwIFI+PiBlbmRvYmogMiAwIG9iaiA8PC9UeXBlL1BhZ2VzL0tpZHNbMyAwIFJdL0NvdW50IDE+PiBlbmRvYmogMyAwIG9iaiA8PC9UeXBlL1BhZ2UvUGFyZW50IDIgMCBSL01lZGlhQm94WzAgMCAxIDEgXT4+IGVuZG9iaiB0cmFpbGVyIDw8L1Jvb3QgMSAwIFI+PiAlJUVPRg=='}
 
 
-@tagged('post_install_l10n', 'post_install', '-at_install')
-class TestUBLRO(TestUBLCommon):
+class TestUBLROCommon(TestUBLCommon):
 
     @classmethod
     @TestUBLCommon.setup_country('ro')
@@ -231,6 +230,10 @@ class TestUBLRO(TestUBLCommon):
         self.assertEqual(move.ubl_cii_xml_id.name[-11:], "cius_ro.xml")
         return move.ubl_cii_xml_id
 
+
+@tagged('post_install_l10n', 'post_install', '-at_install')
+class TestUBLRO(TestUBLROCommon):
+
     ####################################################
     # Testing of the XML generation
     ####################################################
@@ -270,6 +273,17 @@ class TestUBLRO(TestUBLCommon):
         attachment = self.get_attachment(invoice)
         self._assert_invoice_attachment(attachment, xpaths=None, expected_file_path='from_odoo/ciusro_out_invoice_no_prefix_company_registry.xml')
 
+    def test_export_invoice_no_vat_prefix(self):
+        self.company_data['company'].vat = self.company_data['company'].vat[2:]
+        no_vat_partner = self.partner_a.copy({'name': 'Roasted Romanian Roller', 'vat': False, 'invoice_edi_format': 'ciusro'})
+        invoice = self.create_move("out_invoice", partner_id=no_vat_partner.id, currency_id=self.company.currency_id.id)
+        attachment = self.get_attachment(invoice)
+        self._assert_invoice_attachment(attachment, xpaths=None, expected_file_path='from_odoo/ciusro_out_invoice_defaults.xml')
+
+    def test_export_invoice_defaults_new(self):
+        self.env['ir.config_parameter'].set_param('account_edi_ubl_cii.use_new_dict_to_xml_helpers', 'True')
+        self.test_export_invoice_no_vat_prefix()
+
     def test_export_no_vat_and_no_company_registry_raises_error(self):
         self.company_data['company'].write({'vat': False, 'company_registry': False})
         invoice = self.create_move("out_invoice", send=False)
@@ -290,6 +304,43 @@ class TestUBLRO(TestUBLCommon):
         invoice = self.create_move("out_invoice", send=False)
         with self.assertRaisesRegex(UserError, "city name must be 'SECTORX'"):
             invoice._generate_and_send(allow_fallback_pdf=False, template_id=self.move_template.id)
+
+    def test_export_invoice_characters_limit(self):
+        """ Test that 'Item name', 'Item description' and 'Note' don't exceed the limit accepted by the SPV:
+            - Item name: 100 characters limit
+            - Item description: 200 characters limit
+            - Note: 300 characters limit
+        """
+        self.env['ir.config_parameter'].set_param('account_edi_ubl_cii.use_new_dict_to_xml_helpers', 'True')
+        product = self._create_product(
+            name='A product name that is longer than 100 characters in order to trigger a rejection of the invoice by the SPV.'
+        )
+        invoice = self._generate_move(
+            self.env.company.partner_id,
+            self.partner_a,
+            send=True,
+            move_type="out_invoice",
+            currency_id=self.company.currency_id.id,
+            invoice_line_ids=[
+                {
+                    'name': (
+                        'A product description that is longer than 200 characters in order to trigger a rejection of the invoice by the SPV. '
+                        'The product description should be trimmed to 200 characters if it is too long in order to pass the validation from the SPV.'
+                    ),
+                    'product_id': product.id,
+                    'quantity': 1.0,
+                    'price_unit': 500.0,
+                    'tax_ids': [Command.set(self.tax_19.ids)],
+                },
+            ],
+            narration=(
+                'A note that is longer than 300 charracters in order to trigger a rejection of the invoice by the SPV. '
+                'With this extra line, this note will exceed the limit of 300 characters that are authorized by the SPV. '
+                'A note should be trimmed to 300 characters if it is too long in order to pass the validation from the SPV.'
+           ),
+        )
+        attachment = self.get_attachment(invoice)
+        self._assert_invoice_attachment(attachment, xpaths=None, expected_file_path='from_odoo/ciusro_out_invoice_characters_limit.xml')
 
     ####################################################
     # Testing of the bill synchronization with SPV
@@ -344,7 +395,7 @@ class TestUBLRO(TestUBLCommon):
         ])
         self.assertEqual(len(bills), 1)
         self.assertEqual(bills.state, 'draft')
-        self.assertEqual(bills.amount_total, 1785.0)
+        self.assertEqual(bills.amount_total, 1815.0)
         self.assertEqual(bills.commercial_partner_id.vat, '8001011234567')
         self.assertEqual(bills.l10n_ro_edi_index, '5020704741')
         self.assertEqual(bills.l10n_ro_edi_state, 'invoice_validated')
@@ -440,8 +491,9 @@ class TestUBLRO(TestUBLCommon):
 
         self.env['account.move']._l10n_ro_edi_fetch_invoices()
 
-        self.assertEqual(invoice.l10n_ro_edi_state, 'invoice_refused')
+        self.assertEqual(invoice.l10n_ro_edi_state, "invoice_refused")
         self.assertEqual(len(invoice.l10n_ro_edi_document_ids), 1)
+        self.assertEqual(invoice.l10n_ro_edi_document_ids.state, 'invoice_refused')
 
     @patch('odoo.addons.l10n_ro_edi.models.account_move._request_ciusro_synchronize_invoices', new=_patch_request_ciusro_synchronize_invoices)
     def test_ciusro_synchronize_invoices_refusal_held_non_indexed(self):
@@ -463,8 +515,9 @@ class TestUBLRO(TestUBLCommon):
 
         with freeze_time(invoice.create_date + relativedelta(days=HOLDING_DAYS + 2)):
             self.env['account.move']._l10n_ro_edi_fetch_invoices()
-        self.assertEqual(invoice.l10n_ro_edi_state, 'invoice_refused')
+        self.assertEqual(invoice.l10n_ro_edi_state, "invoice_refused")
         self.assertEqual(len(invoice.l10n_ro_edi_document_ids), 1)
+        self.assertEqual(invoice.l10n_ro_edi_document_ids.state, 'invoice_refused')
 
     @patch('odoo.addons.l10n_ro_edi.models.account_move._request_ciusro_synchronize_invoices', new=_patch_request_ciusro_synchronize_invoices)
     def test_ciusro_synchronize_invoices_not_indexed_with_duplicate_name(self):

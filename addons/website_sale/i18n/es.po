@@ -10,16 +10,16 @@
 # Leonardo J. Caballero G. <leonardocaballero@gmail.com>, 2022
 # Pedro M. Baeza <pedro.baeza@tecnativa.com>, 2022
 # Martin Trigaux, 2022
-# "Dylan Kiss (dyki)" <dyki@odoo.com>, 2025.
+# "Dylan Kiss (dyki)" <dyki@odoo.com>, 2025, 2026.
 # "Noemi Pla Garcia (nopl)" <nopl@odoo.com>, 2025, 2026.
 # "Larissa Manderfeld (lman)" <lman@odoo.com>, 2025.
-# Weblate <noreply-mt-weblate@weblate.org>, 2025.
+# Weblate <noreply-mt-weblate@weblate.org>, 2025, 2026.
 msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 16.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-02-20 18:35+0000\n"
-"PO-Revision-Date: 2026-02-16 16:17+0000\n"
+"POT-Creation-Date: 2026-07-10 17:36+0000\n"
+"PO-Revision-Date: 2026-08-07 06:48+0000\n"
 "Last-Translator: \"Noemi Pla Garcia (nopl)\" <nopl@odoo.com>\n"
 "Language-Team: Spanish <https://translate.odoo.com/projects/odoo-19/"
 "website_sale/es/>\n"
@@ -29,7 +29,7 @@ msgstr ""
 "Content-Transfer-Encoding: \n"
 "Plural-Forms: nplurals=3; plural=(n == 1) ? 0 : ((n != 0 && n % 1000000 == "
 "0) ? 1 : 2);\n"
-"X-Generator: Weblate 5.14.3\n"
+"X-Generator: Weblate 2026.6.1\n"
 
 #. module: website_sale
 #: model_terms:ir.ui.view,arch_db:website_sale.products
@@ -61,8 +61,8 @@ msgid ""
 "                 -"
 msgstr ""
 "&amp;copy;\n"
-"                <span class=\"o_footer_copyright_name align-"
-"baseline\">Nombre de la empresa</span>\n"
+"                <span class=\"o_footer_copyright_name align-baseline\">"
+"Nombre de la empresa</span>\n"
 "                 -"
 
 #. module: website_sale
@@ -176,30 +176,10 @@ msgid "1 Column"
 msgstr "1 columna"
 
 #. module: website_sale
-#: model:ir.model.fields.selection,name:website_sale.selection__website__product_page_image_width__100_pc
-msgid "100 %"
-msgstr "100 %"
-
-#. module: website_sale
 #. odoo-javascript
 #: code:addons/website_sale/static/src/website_builder/products_list_page_option.xml:0
 msgid "2 Columns"
 msgstr "2 columnas"
-
-#. module: website_sale
-#: model:ir.model.fields.selection,name:website_sale.selection__website__product_page_image_width__33_pc
-msgid "33 %"
-msgstr "33 %"
-
-#. module: website_sale
-#: model:ir.model.fields.selection,name:website_sale.selection__website__product_page_image_width__50_pc
-msgid "50 %"
-msgstr "50 %"
-
-#. module: website_sale
-#: model:ir.model.fields.selection,name:website_sale.selection__website__product_page_image_width__66_pc
-msgid "66 %"
-msgstr "66 %"
 
 #. module: website_sale
 #: model_terms:ir.ui.view,arch_db:website_sale.o_wsale_offcanvas
@@ -237,8 +217,8 @@ msgid ""
 "to cart</span>"
 msgstr ""
 "<i class=\"d-md-none fa fa-shopping-cart\" role=\"presentation\"/>\n"
-"                                    <span class=\"d-none d-md-"
-"inline\">Añadir a la cesta</span>"
+"                                    <span class=\"d-none d-md-inline\">"
+"Añadir a la cesta</span>"
 
 #. module: website_sale
 #: model_terms:ir.ui.view,arch_db:website_sale.navigation_buttons
@@ -270,8 +250,8 @@ msgid ""
 ">\n"
 "                    <span class=\"o_label small ms-1\">Add to Cart</span>"
 msgstr ""
-"<i class=\"fa fa-fw fa-shopping-cart o_not-animable\" role=\"presentation\"/"
-">\n"
+"<i class=\"fa fa-fw fa-shopping-cart o_not-animable\" role=\"presentation\"/>"
+"\n"
 "                    <span class=\"o_label small ms-1\">Añadir a la cesta</"
 "span>"
 
@@ -398,8 +378,8 @@ msgid ""
 "        </small>"
 msgstr ""
 "<small class=\"text-muted mb-0\">\n"
-"            <a href=\"/terms\" class=\"o_translate_inline text-"
-"muted\"><u>Términos y condiciones</u></a><br/>\n"
+"            <a href=\"/terms\" class=\"o_translate_inline text-muted\"><u>"
+"Términos y condiciones</u></a><br/>\n"
 "            Grantía de devolución de 30 días<br/>\n"
 "            Envío: 2-3 días laborables\n"
 "        </small>"
@@ -413,6 +393,7 @@ msgstr "<span class=\"align-middle\">¿Ya tiene una cuenta?</span>"
 #: model_terms:ir.ui.view,arch_db:website_sale.confirmation
 msgid "<span class=\"align-middle\">to follow your order.</span>"
 msgstr ""
+"<span class=\"align-middle\">para hacer seguimiento de tu pedido.</span>"
 
 #. module: website_sale
 #: model_terms:ir.ui.view,arch_db:website_sale.s_dynamic_snippet_products_preview_data
@@ -514,8 +495,8 @@ msgid ""
 "animable\"/> Fast Shipping\n"
 "                                </span>"
 msgstr ""
-"<span class=\"s_badge badge text-bg-primary o_animable\" data-"
-"name=\"Badge\">\n"
+"<span class=\"s_badge badge text-bg-primary o_animable\" data-name=\"Badge\">"
+"\n"
 "                                    <i class=\"fa fa-dollar fa-fw o_not-"
 "animable\"/> Precios bajos\n"
 "                                </span>\n"
@@ -583,8 +564,8 @@ msgid ""
 "<span name=\"o_wsale_cta_wrapper_boxed_price_label\" class=\"text-"
 "muted\">Price</span>"
 msgstr ""
-"<span name=\"o_wsale_cta_wrapper_boxed_price_label\" class=\"text-"
-"muted\">Precio</span>"
+"<span name=\"o_wsale_cta_wrapper_boxed_price_label\" class=\"text-muted\">"
+"Precio</span>"
 
 #. module: website_sale
 #: model_terms:ir.ui.view,arch_db:website_sale.billing_address_list
@@ -757,8 +738,8 @@ msgstr ""
 "                            <hr/>\n"
 "                            <table width=\"100%\">\n"
 "                                <tr>\n"
-"                                    <td style=\"padding: 10px; width:150px;"
-"\">\n"
+"                                    <td style=\"padding: 10px; "
+"width:150px;\">\n"
 "                                        <img t-attf-src=\"/web/image/"
 "product.product/{{ line.product_id.id }}/image_128\" style=\"width: 100px; "
 "height: 100px; object-fit: contain;\" alt=\"Imagen del producto\"/>\n"
@@ -782,10 +763,10 @@ msgstr ""
 "0px; font-size: 14px;\">\n"
 "                        <a t-attf-href=\"{{ object.get_base_url() }}/shop/"
 "cart?id={{ object.id }}&amp;access_token={{ object.access_token }}\" "
-"target=\"_blank\" t-attf-style=\"background-color: "
-"{{object.user_id.company_id.email_secondary_color or '#875A7B'}}; padding: "
-"8px 16px 8px 16px; text-decoration: none; color: "
-"{{object.user_id.company_id.email_primary_color or '#FFFFFF'}}; border-"
+"target=\"_blank\" t-attf-style=\"background-color: {"
+"{object.user_id.company_id.email_secondary_color or '#875A7B'}}; padding: "
+"8px 16px 8px 16px; text-decoration: none; color: {"
+"{object.user_id.company_id.email_primary_color or '#FFFFFF'}}; border-"
 "radius: 5px; font-size:13px;\">\n"
 "                            Reanudar pedido\n"
 "                        </a>\n"
@@ -793,8 +774,8 @@ msgstr ""
 "                    <t t-set=\"company\" t-value=\"object.company_id or "
 "object.user_id.company_id or user.company_id\"/>\n"
 "                    <div style=\"text-align: center;\"><strong>Gracias por "
-"comprar con <t t-out=\"company.name or ''\">Mi Compañía (San Francisco)</t>."
-"</strong></div>\n"
+"comprar con <t t-out=\"company.name or ''\">Mi Compañía (San Francisco)</t>"
+".</strong></div>\n"
 "                </td></tr>\n"
 "            </table>\n"
 "        </td>\n"
@@ -954,7 +935,7 @@ msgstr "Acciones"
 #: model_terms:ir.ui.view,arch_db:website_sale.product_product_view_form_easy_inherit_website_sale
 #: model_terms:ir.ui.view,arch_db:website_sale.product_template_form_view
 msgid "Add Media"
-msgstr "Añadir medios"
+msgstr "Añadir archivo multimedia"
 
 #. module: website_sale
 #. odoo-javascript
@@ -974,8 +955,8 @@ msgid ""
 "Add a reference price per UoM on products (i.e $/kg), in addition to "
 "the                           sale price"
 msgstr ""
-"Mostrar un precio de referencia por unidad de medida en los productos (€/"
-"kg), además del                           precio de venta"
+"Mostrar un precio de referencia por unidad de medida en los productos (€/kg)"
+", además del                           precio de venta"
 
 #. module: website_sale
 #: model:ir.model.fields,help:website_sale.field_product_product__compare_list_price
@@ -1142,8 +1123,7 @@ msgstr "Aplicar"
 #. module: website_sale
 #: model_terms:ir.ui.view,arch_db:website_sale.res_config_settings_view_form
 msgid "Apply specific prices or currency per country, customer, products, etc."
-msgstr ""
-"Aplica precios o monedas específicas por país, cliente, productos, etc."
+msgstr "Aplica precios o monedas específicas por país, cliente, productos, etc."
 
 #. module: website_sale
 #. odoo-javascript
@@ -1339,7 +1319,7 @@ msgstr "Diseño de bloques"
 #. odoo-javascript
 #: code:addons/website_sale/static/src/website_builder/products_design_panel.xml:0
 msgid "Bold"
-msgstr "Área negra"
+msgstr "Negrita"
 
 #. module: website_sale
 #: model_terms:ir.ui.view,arch_db:website_sale.res_config_settings_view_form
@@ -1368,6 +1348,12 @@ msgstr "Borde primario"
 #: code:addons/website_sale/static/src/website_builder/products_list_page_option.xml:0
 msgid "Bordered"
 msgstr "Con bordes"
+
+#. module: website_sale
+#. odoo-javascript
+#: code:addons/website_sale/static/src/website_builder/product_page_option.xml:0
+msgid "Bottom"
+msgstr "Fondo"
 
 #. module: website_sale
 #. odoo-python
@@ -1910,17 +1896,17 @@ msgstr "Contacto"
 #. module: website_sale
 #: model_terms:ir.ui.view,arch_db:website_sale.product
 msgid "Contact Us"
-msgstr "Contáctenos"
+msgstr "Contacta con nosotros"
 
 #. module: website_sale
 #: model:ir.model.fields,field_description:website_sale.field_website__contact_us_button_url
 msgid "Contact Us Button URL"
-msgstr "URL del botón Contáctenos"
+msgstr "URL del botón Contacta con nosotros"
 
 #. module: website_sale
 #: model_terms:ir.ui.view,arch_db:website_sale.template_footer_website_sale
 msgid "Contact us"
-msgstr "Contáctenos"
+msgstr "Contacta con nosotros"
 
 #. module: website_sale
 #. odoo-javascript
@@ -3076,7 +3062,7 @@ msgstr "Si está marcada, algunos mensajes tienen error de envío."
 msgid "If product price equals 0, replace 'Add to Cart' by 'Contact us'."
 msgstr ""
 "Si el precio del producto es igual a 0, reemplace 'Añadir a la cesta' por "
-"'Contáctenos'."
+"'Contacta con nosotros'."
 
 #. module: website_sale
 #: model:mail.template,description:website_sale.mail_template_sale_cart_recovery
@@ -3404,6 +3390,7 @@ msgstr "Diseño"
 
 #. module: website_sale
 #. odoo-javascript
+#: code:addons/website_sale/static/src/website_builder/product_page_option.xml:0
 #: code:addons/website_sale/static/src/website_builder/product_ribbon_options.xml:0
 #: model:ir.model.fields.selection,name:website_sale.selection__product_ribbon__position__left
 msgid "Left"
@@ -3762,7 +3749,7 @@ msgid ""
 "Please contact us for more information."
 msgstr ""
 "No hay un método de envío disponible para su orden y dirección de envío. "
-"Contáctenos para recibir más información."
+"Contacta con nosotros para recibir más información."
 
 #. module: website_sale
 #. odoo-python
@@ -4038,7 +4025,7 @@ msgstr "Nuestros métodos de pago"
 #. module: website_sale
 #: model:product.ribbon,name:website_sale.out_of_stock_ribbon
 msgid "Out of stock"
-msgstr "Fuera de stock"
+msgstr "Agotado"
 
 #. module: website_sale
 #. odoo-javascript
@@ -5012,9 +4999,15 @@ msgstr "Buscar de forma general"
 #. module: website_sale
 #: model_terms:ir.ui.view,arch_db:website_sale.o_wsale_offcanvas
 #: model_terms:ir.ui.view,arch_db:website_sale.product
+#: model_terms:ir.ui.view,arch_db:website_sale.product_search
 #: model_terms:ir.ui.view,arch_db:website_sale.products
 msgid "Search in"
 msgstr "Buscar en"
+
+#. module: website_sale
+#: model_terms:ir.ui.view,arch_db:website_sale.filter_radio_and_multi_attributes
+msgid "Search {{0}} ({{1}})"
+msgstr "Buscar {{0}} ({{1}})"
 
 #. module: website_sale
 #: model_terms:ir.ui.view,arch_db:website_sale.products
@@ -5672,8 +5665,7 @@ msgstr ""
 #. odoo-python
 #: code:addons/website_sale/controllers/cart.py:0
 msgid "The given product does not exist therefore it cannot be added to cart."
-msgstr ""
-"El producto dado no existe, por lo tanto no se puede añadir a la cesta."
+msgstr "El producto dado no existe, por lo tanto no se puede añadir a la cesta."
 
 #. module: website_sale
 #. odoo-python
@@ -5827,6 +5819,12 @@ msgid "This product is no longer available."
 msgstr "Este producto ya no está disponible."
 
 #. module: website_sale
+#. odoo-python
+#: code:addons/website_sale/models/sale_order.py:0
+msgid "This product is not available (anymore) in this unit of measure."
+msgstr "Este producto ya no está disponible en esta unidad de medida."
+
+#. module: website_sale
 #: model_terms:ir.ui.view,arch_db:website_sale.products_item
 msgid "This product is unpublished."
 msgstr "Este producto no está publicado."
@@ -5873,10 +5871,10 @@ msgid ""
 "ones                            in list view and click on 'Portal Access "
 "Management' option in the                            dropdown menu *Action*."
 msgstr ""
-"Para enviar invitaciones en modo B2B, abre un contacto o selecciona "
-"varios                              en la lista de vista y haz clic en la "
-"opción «Gestión de acceso al portal» del                            menú "
-"desplegable *Acción*."
+"Para enviar invitaciones en modo B2B, abre un contacto o selecciona varios"
+"                              en la lista de vista y haz clic en la opción «"
+"Gestión de acceso al portal» del                            menú desplegable "
+"*Acción*."
 
 #. module: website_sale
 #. odoo-python
@@ -6052,6 +6050,14 @@ msgid "Video URL"
 msgstr "URL del vídeo"
 
 #. module: website_sale
+#. odoo-javascript
+#: code:addons/website_sale/static/src/interactions/website_sale.js:0
+msgid "View Less"
+msgstr "Ver menos"
+
+#. module: website_sale
+#. odoo-javascript
+#: code:addons/website_sale/static/src/interactions/website_sale.js:0
 #: model_terms:ir.ui.view,arch_db:website_sale.filter_radio_and_multi_attributes
 msgid "View More"
 msgstr "Ver más"
@@ -6690,9 +6696,26 @@ msgid "terms &amp; conditions"
 msgstr "términos y condiciones"
 
 #. module: website_sale
+#: model_terms:ir.ui.view,arch_db:website_sale.cart_combo_item_line
+msgid "x"
+msgstr "x"
+
+#. module: website_sale
 #: model_terms:ir.ui.view,arch_db:website_sale.dynamic_filter_template_product_product_products_item
 msgid "{{0}} image"
 msgstr "{{0}} imagen"
+
+#~ msgid "100 %"
+#~ msgstr "100 %"
+
+#~ msgid "33 %"
+#~ msgstr "33 %"
+
+#~ msgid "50 %"
+#~ msgstr "50 %"
+
+#~ msgid "66 %"
+#~ msgstr "66 %"
 
 #~ msgid ""
 #~ "<a role=\"button\" t-att-href=\"order.partner_id.signup_prepare() and "
@@ -6972,9 +6995,6 @@ msgstr "{{0}} imagen"
 
 #~ msgid "Both"
 #~ msgstr "Ambos"
-
-#~ msgid "Bottom"
-#~ msgstr "Fondo"
 
 #~ msgid "Brand"
 #~ msgstr "Marca"

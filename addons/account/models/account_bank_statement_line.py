@@ -409,7 +409,7 @@ class AccountBankStatementLine(models.Model):
                 )
             to_write = {'statement_line_id': st_line.id, 'narration': st_line.narration, 'name': False}
             with self.env.protecting(self.env['account.move']._get_protected_vals(vals, st_line)):
-                st_line.move_id.write(to_write)
+                st_line.move_id.with_context(clear_sequence_mixin_cache=False).write(to_write)
         self.env['account.move.line'].create(to_create_lines_vals)
         self.env.add_to_compute(self.env['account.move']._fields['name'], st_lines.move_id)
 
@@ -461,12 +461,16 @@ class AccountBankStatementLine(models.Model):
         """ Undo the reconciliation made on the statement line and reset their journal items
         to their original states.
         """
+        for st_line in self:
+            if st_line.checked and st_line.is_reconciled and not st_line.move_id._is_user_able_to_review():
+                raise ValidationError(self.env._("Validated entries can only be changed by your accountant."))
+
         self.line_ids.remove_move_reconcile()
         self.payment_ids.unlink()
 
         for st_line in self:
             st_line.with_context(force_delete=True, skip_readonly_check=True).write({
-                'checked': True,
+                'checked': st_line.move_id._is_user_able_to_review(),
                 'line_ids': [Command.clear()] + [
                     Command.create(line_vals) for line_vals in st_line._prepare_move_line_default_vals()],
             })

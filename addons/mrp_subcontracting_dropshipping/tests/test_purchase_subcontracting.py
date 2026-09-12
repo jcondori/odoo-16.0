@@ -1,6 +1,6 @@
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
-from odoo import Command
+from odoo import Command, fields
 from odoo.tests import Form, tagged
 from odoo.addons.mrp_subcontracting.tests.common import TestMrpSubcontractingCommon
 from odoo.addons.stock_account.tests.common import TestStockValuationCommon
@@ -472,3 +472,97 @@ class TestSubcontractingDropshippingFlows(TestMrpSubcontractingCommon, TestStock
         self.assertRecordValues(move._get_subcontract_production()[1], [{
             'qty_producing': 0.0, 'lot_producing_ids': finished_serial.ids, 'state': 'confirmed',
         }])
+
+    def test_single_dropship_po_created_for_subcontracted_products(self):
+        """Create a subcontracting BoM with dropshipped components.
+        Confirm a purchase order containing subcontracted products and verify that
+        only one dropship purchase order is created for the components.
+        """
+        self.comp2_bom.type = 'subcontract'
+        self.comp2_bom.subcontractor_ids = [Command.link(self.subcontractor_partner1.id)]
+        dropship_route = self.env['stock.route'].search([('name', '=', 'Dropship')], limit=1)
+        (self.comp1 | self.comp2comp).route_ids = [Command.link(dropship_route.id)]
+        (self.comp1 | self.comp2comp).seller_ids = [Command.create({'partner_id': self.vendor.id})]
+        po = self.env['purchase.order'].create({
+            "partner_id": self.subcontractor_partner1.id,
+            "picking_type_id": self.warehouse.in_type_id.id,
+            "order_line": [
+                Command.create({
+                    'product_id': self.finished.id,
+                    'name': self.finished.name,
+                    'product_qty': 1.0,
+                }),
+                Command.create({
+                    'product_id': self.comp2.id,
+                    'name': self.comp2.name,
+                    'product_qty': 1.0,
+                }),
+            ],
+        })
+        po.button_confirm()
+        dropship_po = self.env['purchase.order'].search([('reference_ids', '=', po.reference_ids.id), ('id', '!=', po.id)])
+        self.assertEqual(len(dropship_po), 1, 'A single PO should be created for the dropshipped component')
+        self.assertEqual(dropship_po.order_line.product_id, (self.comp1 | self.comp2comp))
+
+    def test_avco_dropship_subcontracting_bill_price_difference(self):
+        """
+        Check that posting a vendor bill after a dropship subcontracting delivery updates the
+        cost of the product according to the actual bill price plus component cost.
+
+        Flow: subcontractor confirmed ar $5 for FP, component at $2 for a total cost of $7 after delivery.
+        A vendor bill is later posted at $10, so the cost must update to $10 + $2 = $12.
+        """
+        # Final product in AVCO perpetual, component at standard price $2
+        final_product, component = self.env['product.product'].create([
+            {'name': 'Final Product', 'is_storable': True, 'categ_id': self.category_avco_auto.id},
+            {'name': 'Component', 'is_storable': True, 'standard_price': 2.0},
+        ])
+        # Final Product cost = subcontractor fee $5 + component cost $2 = $7 total
+        self.env['mrp.bom'].create({
+            'product_tmpl_id': final_product.product_tmpl_id.id,
+            'type': 'subcontract',
+            'subcontractor_ids': [Command.link(self.subcontractor_partner1.id)],
+            'bom_line_ids': [Command.create({'product_id': component.id, 'product_qty': 1.0})],
+        })
+        self.env['product.supplierinfo'].create({
+            'partner_id': self.subcontractor_partner1.id,
+            'product_tmpl_id': final_product.product_tmpl_id.id,
+            'price': 5.0,
+        })
+        self.env['stock.quant']._update_available_quantity(component, self.stock_location, 5.0)
+
+        dropship_picking_type = self.env['stock.picking.type'].search([
+            ('company_id', '=', self.env.company.id),
+            ('default_location_src_id.usage', '=', 'supplier'),
+            ('default_location_dest_id.usage', '=', 'customer'),
+        ], order='sequence', limit=1)
+        po = self.env['purchase.order'].create({
+            'partner_id': self.subcontractor_partner1.id,
+            'picking_type_id': dropship_picking_type.id,
+            'dest_address_id': self.partner.id,
+            'order_line': [Command.create({
+                'product_id': final_product.id,
+                'product_qty': 1.0,
+                'price_unit': 5.0,
+                'tax_ids': False,
+            })],
+        })
+        po.button_confirm()
+        # resupply subcontractor and validate the dropship
+        mo = po.reference_ids.production_ids
+        resupply_picking = mo.picking_ids
+        resupply_picking.button_validate()
+        self.assertEqual(mo.picking_ids.state, 'done')
+        dropship_picking = po.picking_ids
+        dropship_picking.button_validate()
+        # Check that the AVCO cost was updated to subcontractor fee $5 + component $2 = $7 total
+        self.assertAlmostEqual(final_product.standard_price, 7.0, places=2)
+
+        # Post vendor bill at $10 instead of the PO's $5
+        po.action_create_invoice()
+        bill = po.invoice_ids
+        bill.invoice_date = fields.Date.today()
+        bill.invoice_line_ids.price_unit = 10.0
+        bill.action_post()
+        # The AVCO cost must be updated to bill price + component cost = $10 + $2 = $12.
+        self.assertAlmostEqual(final_product.standard_price, 12.0, places=2)

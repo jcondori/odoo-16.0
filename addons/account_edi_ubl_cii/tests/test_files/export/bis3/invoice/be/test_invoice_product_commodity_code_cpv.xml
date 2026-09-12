@@ -129,10 +129,9 @@
 		<cbc:InvoicedQuantity unitCode="C62">1.0</cbc:InvoicedQuantity>
 		<cbc:LineExtensionAmount currencyID="EUR">10.00</cbc:LineExtensionAmount>
 		<cac:Item>
-			<cbc:Description>Test Product</cbc:Description>
 			<cbc:Name>Test Product</cbc:Name>
 			<cac:CommodityClassification>
-				<cbc:ItemClassificationCode listID="CPV">35113110-0</cbc:ItemClassificationCode>
+				<cbc:ItemClassificationCode listID="STI">35113110-0</cbc:ItemClassificationCode>
 			</cac:CommodityClassification>
 			<cac:ClassifiedTaxCategory>
 				<cbc:ID>S</cbc:ID>

@@ -558,13 +558,16 @@ class AccountJournal(models.Model):
             journal.default_account_id = False
             journal.profit_account_id = False
             journal.loss_account_id = False
-            if journal.type == 'sale':
-                journal.default_account_id = journal.company_id.income_account_id
-            elif journal.type == 'purchase':
-                journal.default_account_id = journal.company_id.expense_account_id
+            company = journal.company_id
+            if journal.type == 'sale' and company.income_account_id.active:
+                journal.default_account_id = company.income_account_id
+            elif journal.type == 'purchase' and company.expense_account_id.active:
+                journal.default_account_id = company.expense_account_id
             elif journal.type in ('cash', 'bank'):
-                journal.profit_account_id = journal.company_id.default_cash_difference_income_account_id
-                journal.loss_account_id = journal.company_id.default_cash_difference_expense_account_id
+                if company.default_cash_difference_income_account_id.active:
+                    journal.profit_account_id = company.default_cash_difference_income_account_id
+                if company.default_cash_difference_expense_account_id.active:
+                    journal.loss_account_id = company.default_cash_difference_expense_account_id
 
         # codes are reset and recomputed whenever the
         # journal type changes through the form view
@@ -691,8 +694,8 @@ class AccountJournal(models.Model):
             if pending_moves:
                 raise ValidationError(_("You can not archive a journal containing draft journal entries.\n\n"
                                         "To proceed:\n"
-                                        "1/ click on the top-right button 'Journal Entries' from this journal form\n"
-                                        "2/ then filter on 'Draft' entries\n"
+                                        "1/ go to Accounting > Accounting > Journal Entries\n"
+                                        "2/ filter on this journal and on 'Unposted' entries\n"
                                         "3/ select them all and post or delete them through the action menu"))
 
     @api.constrains('type', 'incoming_einvoice_notification_email')
@@ -818,9 +821,9 @@ class AccountJournal(models.Model):
             for journal in self.filtered(lambda r: r.type == 'bank' and not r.bank_account_id):
                 journal.set_bank_account(vals.get('bank_acc_number'), vals.get('bank_id'))
         if 'bank_acc_number' in vals or 'bank_account_id' in vals:
-            bank = self.filtered(lambda r: r.type == 'bank').bank_account_id
-            if bank and bank._user_can_trust():
-                bank.allow_out_payment = True
+            for bank in self.filtered(lambda r: r.type == 'bank').bank_account_id:
+                if bank._user_can_trust():
+                    bank.allow_out_payment = True
         return result
 
     def _alias_get_creation_values(self):
@@ -971,6 +974,7 @@ class AccountJournal(models.Model):
         company = self.env['res.company'].browse(vals['company_id']) if vals.get('company_id') else self.env.company
         vals['company_id'] = company.id
 
+        ProductCategory = self.env['product.category'].with_company(company)
         if journal_type in ('bank', 'cash'):
             has_liquidity_accounts = vals.get('default_account_id')
             has_profit_account = vals.get('profit_account_id')
@@ -986,6 +990,12 @@ class AccountJournal(models.Model):
                 vals['profit_account_id'] = company.default_cash_difference_income_account_id.id
             if journal_type in ('cash', 'bank') and not has_loss_account:
                 vals['loss_account_id'] = company.default_cash_difference_expense_account_id.id
+        elif journal_type == 'purchase':
+            if account := ProductCategory._fields['property_account_expense_categ_id'].get_company_dependent_fallback(ProductCategory):
+                vals.setdefault('default_account_id', account.id)
+        elif journal_type == 'sale':
+            if account := ProductCategory._fields['property_account_income_categ_id'].get_company_dependent_fallback(ProductCategory):
+                vals.setdefault('default_account_id', account.id)
 
         if journal_type == 'credit':
             if not vals.get('default_account_id'):
@@ -1048,6 +1058,38 @@ class AccountJournal(models.Model):
                 'journal_id': self,
             }
         )
+
+    def _assign_outsanding_account_to_payment_method_lines(self, payment_type, payment_method_codes=None, chart_template=None):
+        """ Link bank journal payment method lines to their corresponding outstanding account for the specified chart template.
+
+        :param payment_type: Payment direction, either ``'inbound'`` or ``'outbound'``.
+        :param payment_method_codes: Optional list of payment method codes used to restrict
+            the payment method lines that are updated.
+        :param chart_template: Chart template used to select the relevant bank journals
+            and determine the outstanding account.
+        """
+        bank_journals = self.filtered(lambda j: j.type == "bank" and j.company_id.chart_template == chart_template)
+        if not bank_journals:
+            return
+
+        lines_to_update = bank_journals[f"{payment_type}_payment_method_line_ids"]
+        if payment_method_codes:
+            lines_to_update = lines_to_update.filtered(
+                lambda l: l.payment_method_id.code in payment_method_codes
+            )
+        if not lines_to_update:
+            return
+
+        account_xmlid = 'account_journal_payment_debit_account_id' if payment_type == 'inbound' else 'account_journal_payment_credit_account_id'
+        account_company_map = {
+            company: self.env['account.chart.template']
+                .with_company(company)
+                .ref(account_xmlid, raise_if_not_found=False)
+            for company in lines_to_update.mapped('company_id')
+        }
+        for company, lines in lines_to_update.grouped('company_id').items():
+            if account := account_company_map[company]:
+                lines.payment_account_id = account
 
     @api.depends('currency_id')
     def _compute_display_name(self):

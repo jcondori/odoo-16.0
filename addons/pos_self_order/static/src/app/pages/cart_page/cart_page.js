@@ -140,12 +140,15 @@ export class CartPage extends Component {
     async proceedInfos(state) {
         this.state.fillInformations = false;
         if (state) {
+            this.selfOrder.currentOrder.mobile =
+                this.selfOrder.currentOrder.partner_id?.phone || state.phone;
             this.selfOrder.currentOrder.email =
                 this.selfOrder.currentOrder.partner_id?.email || state.email;
             await this.pay();
         }
     }
 
+    // TODO: remove in master
     generateTicketImage = async (basicReceipt = false) =>
         await this.renderer.toJpeg(
             OrderReceipt,
@@ -156,6 +159,7 @@ export class CartPage extends Component {
             { addClass: "pos-receipt-print p-3" }
         );
 
+    // TODO: remove in master
     async _sendReceiptToCustomer({ action, destination, mail_template_id }) {
         const order = this.selfOrder.currentOrder;
         const fullTicketImage = await this.generateTicketImage();

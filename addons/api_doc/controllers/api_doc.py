@@ -11,6 +11,8 @@ import typing
 from http import HTTPStatus
 
 import docutils.core
+from docutils import parsers, readers, writers
+from docutils.writers.html4css1 import Writer as HtmlWriter
 from werkzeug.exceptions import NotFound
 from werkzeug.http import is_resource_modified, parse_cache_control_header
 
@@ -144,6 +146,7 @@ class DocController(http.Controller):
                     field.name: {'string': field.field_description}
                     for field in ir_model.field_id
                     # sorted(ir_model.field_id, key=partial(sort_key_field, modules, Model))
+                    if field.name in Model._fields  # band-aid, see task 5172546
                     if Model._has_field_access(Model._fields[field.name], 'read')
                 },
                 'methods': [
@@ -609,8 +612,14 @@ class _DocUtils:
 
     @classmethod
     def _make_settings(cls, writer_name, settings_overrides):
-        pub = docutils.core.Publisher()
-        pub.set_components('standalone', 'restructuredtext', writer_name)
+        parser = parsers.get_parser_class('restructuredtext')()
+        reader = readers.get_reader_class('standalone')(parser)
+        writer = writers.get_writer_class(writer_name)()
+        pub = docutils.core.Publisher(
+            reader=reader,
+            parser=parser,
+            writer=writer,
+        )
         pub.process_programmatic_settings(None, settings_overrides, None)
         return pub.settings
 
@@ -650,7 +659,7 @@ class _DocUtils:
         root.append(tree)
         html = docutils.core.publish_from_doctree(
             root,
-            writer_name='html',
+            writer=HtmlWriter(),
             settings=cls._settings_html,
         )
         head = b'\n</head>\n<body>\n<div class="document">'

@@ -282,6 +282,9 @@ class ResPartnerBank(models.Model):
             or tools.config['test_enable']
         )
 
+    def action_open_business_doc(self):
+        return self._get_records_action()
+
     @api.model_create_multi
     def create(self, vals_list):
         # EXTENDS base res.partner.bank
@@ -343,7 +346,7 @@ class ResPartnerBank(models.Model):
         ):
             raise UserError(_("You cannot modify the account number or partner of an account that has been trusted."))
 
-        if 'allow_out_payment' in vals and not self._user_can_trust():
+        if 'allow_out_payment' in vals and any(not bank._user_can_trust() for bank in self):
             raise UserError(_("You do not have the rights to trust or un-trust accounts."))
 
         res = super().write(vals)
