@@ -1,7 +1,7 @@
 import os
 
 path_config = r'E:\Documents\GitHub\scripts\confs'
-template_config = 'E:/Documents/GitHub/Scripts/confs/@template-18.conf'
+template_config = 'E:/Documents/GitHub/Scripts/confs/@template-19.conf'
 
 
 def detect_configs() -> list[str]:
